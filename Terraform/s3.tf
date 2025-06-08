@@ -1,6 +1,11 @@
 # Create a Random Suffix for Uniqueness in S3 Bucket Name
 resource "random_id" "suffix" {
   byte_length = 4
+  # Keep the same random ID even when other attributes change
+  keepers = {
+    # This value should remain the same across all environments
+    app_name = "file-processor"
+  }
 }
 
 
@@ -12,7 +17,7 @@ resource "aws_s3_bucket" "upload_bucket" {
 
   lifecycle {
     prevent_destroy = false           # Allows terraform destroy to delete bucket
-    ignore_changes  = [tags, versioning]  # Ignores tag and versioning changes
+    ignore_changes  = [tags, versioning, website]  # Ignores tag, versioning, and website changes
   }
 }
 
@@ -77,6 +82,15 @@ resource "aws_iam_role" "lambda_exec_role" {
       }
     }]
   })
+  
+  # Force IAM role creation to complete before use
+  provisioner "local-exec" {
+    command = "sleep 10"
+  }
+  
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 
@@ -85,6 +99,7 @@ resource "aws_iam_role" "lambda_exec_role" {
 resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
   role       = aws_iam_role.lambda_exec_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  depends_on = [aws_iam_role.lambda_exec_role]
 }
 
 
@@ -93,6 +108,7 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
 resource "aws_iam_role_policy_attachment" "lambda_cloudwatch_logging" {
   role       = aws_iam_role.lambda_exec_role.name
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+  depends_on = [aws_iam_role.lambda_exec_role]
 }
 
 
