@@ -16,6 +16,13 @@ resource "aws_s3_bucket" "upload_bucket" {
   }
 }
 
+resource "aws_s3_bucket_versioning" "bucket_versioning" {
+  bucket = aws_s3_bucket.upload_bucket.id
+  versioning_configuration {
+    status = "Disabled"
+  }
+}
+
 resource "aws_s3_bucket_public_access_block" "upload_bucket_public_access" {
   bucket = aws_s3_bucket.upload_bucket.id
   block_public_acls       = false
@@ -65,7 +72,7 @@ resource "aws_s3_bucket_notification" "s3_lambda_trigger" {
 # IAM Role for Lambda with Trust Relationship Policy
 
 resource "aws_iam_role" "lambda_exec_role" {
-  name = "lambda_exec_role"
+  name = "lambda_exec_role_${random_id.suffix.hex}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -109,7 +116,7 @@ data "archive_file" "lambda_zip" {
 # Define the Lambda Function
 
 resource "aws_lambda_function" "file_processor" {
-  function_name = "file-upload-handler"
+  function_name = "file-upload-handler-${random_id.suffix.hex}"
   handler       = "lambda_function.lambda_handler"  # Entry point
   runtime       = "python3.12"
   role          = aws_iam_role.lambda_exec_role.arn
