@@ -36,20 +36,19 @@ jobs:
       id: terraform-outputs
       run: |
         cd Terraform
-        echo "BUCKET_NAME=$(terraform output -raw s3_bucket_name)" >> $GITHUB_ENV
-        echo "API_ENDPOINT=$(terraform output -raw api_endpoint)" >> $GITHUB_ENV
+        echo "BUCKET_NAME=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
+        echo "API_ENDPOINT=$(terraform output -raw api_endpoint)" >> $GITHUB_OUTPUT
       
     - name: Upload test file
       run: |
         echo "Hello from GitHub Actions" > testfile.txt
-        aws s3 cp testfile.txt s3://${{ env.BUCKET_NAME }}/testfile.txt
-
+        aws s3 cp testfile.txt s3://${{ steps.terraform-outputs.outputs.BUCKET_NAME }}/testfile.txt
         
     - name: Test Lambda via API Gateway
       run: |
-        curl -X POST ${{ env.API_ENDPOINT }}/process -d '{"test":"data"}'
+        curl -X POST ${{ steps.terraform-outputs.outputs.API_ENDPOINT }}/process -d '{"test":"data"}'
         
     - name: Print resource information
       run: |
-        echo "S3 Bucket: ${{ env.BUCKET_NAME }}"
-        echo "API Endpoint: ${{ env.API_ENDPOINT }}"
+        echo "S3 Bucket: ${{ steps.terraform-outputs.outputs.BUCKET_NAME }}"
+        echo "API Endpoint: ${{ steps.terraform-outputs.outputs.API_ENDPOINT }}"
