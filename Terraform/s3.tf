@@ -16,6 +16,31 @@ resource "aws_s3_bucket" "upload_bucket" {
   }
 }
 
+resource "aws_s3_bucket_public_access_block" "upload_bucket_public_access" {
+  bucket = aws_s3_bucket.upload_bucket.id
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
+resource "aws_s3_bucket_policy" "allow_public_access" {
+  bucket = aws_s3_bucket.upload_bucket.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "PublicReadGetObject"
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = "s3:GetObject"
+        Resource  = "${aws_s3_bucket.upload_bucket.arn}/*"
+      }
+    ]
+  })
+  depends_on = [aws_s3_bucket_public_access_block.upload_bucket_public_access]
+}
+
 # Allow S3 to Invoke the Lambda Function
 resource "aws_lambda_permission" "allow_s3" {
   statement_id  = "AllowS3Invoke"
