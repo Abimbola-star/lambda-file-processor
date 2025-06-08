@@ -12,14 +12,7 @@ resource "aws_s3_bucket" "upload_bucket" {
 
   lifecycle {
     prevent_destroy = false           # Allows terraform destroy to delete bucket
-    ignore_changes  = [tags]          # Ignores tag changes to prevent recreation
-  }
-}
-
-resource "aws_s3_bucket_versioning" "bucket_versioning" {
-  bucket = aws_s3_bucket.upload_bucket.id
-  versioning_configuration {
-    status = "Disabled"
+    ignore_changes  = [tags, versioning]  # Ignores tag and versioning changes
   }
 }
 
@@ -89,18 +82,16 @@ resource "aws_iam_role" "lambda_exec_role" {
 
 # Attach Basic Execution Policy to Lambda Role
 
-resource "aws_iam_policy_attachment" "lambda_basic_execution" {
-  name       = "lambda_basic_execution"
-  roles      = [aws_iam_role.lambda_exec_role.name]
+resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
+  role       = aws_iam_role.lambda_exec_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
 
 # Attach CloudWatch Logging Permissions to Lambda Execution Role
 
-resource "aws_iam_policy_attachment" "lambda_cloudwatch_logging" {
-  name       = "lambda_cloudwatch_logging"
-  roles      = [aws_iam_role.lambda_exec_role.name]
+resource "aws_iam_role_policy_attachment" "lambda_cloudwatch_logging" {
+  role       = aws_iam_role.lambda_exec_role.name
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
 }
 
