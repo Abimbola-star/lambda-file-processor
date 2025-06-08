@@ -16,8 +16,16 @@ resource "aws_s3_bucket" "upload_bucket" {
   }
 }
 
-# Setup S3 Event Notification to Trigger Lambda on File Upload
+# Allow S3 to Invoke the Lambda Function
+resource "aws_lambda_permission" "allow_s3" {
+  statement_id  = "AllowS3Invoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.file_processor.function_name
+  principal     = "s3.amazonaws.com"
+  source_arn    = aws_s3_bucket.upload_bucket.arn
+}
 
+# Setup S3 Event Notification to Trigger Lambda on File Upload
 resource "aws_s3_bucket_notification" "s3_lambda_trigger" {
   bucket = aws_s3_bucket.upload_bucket.id
 
@@ -69,7 +77,7 @@ resource "aws_iam_policy_attachment" "lambda_cloudwatch_logging" {
 
 data "archive_file" "lambda_zip" {
   type        = "zip"
-  source_file = "${path.module}/lambda_function.py"  # Your uploaded function
+  source_file = "${path.root}/lambda_function.py"  # Your uploaded function
   output_path = "${path.module}/lambda_function.zip"
 }
 
@@ -117,9 +125,9 @@ resource "aws_apigatewayv2_integration" "lambda_integration" {
 
 # Define the HTTP Route (POST /upload)
 
-resource "aws_apigatewayv2_route" "default_route" {
-  api_id    = aws_apigatewayv2_api.lambda_api.id
-  route_key = "POST /upload"  # HTTP POST to /upload
+resource "aws_apigatewayv2_route" "lambda_route" {
+  api_id = aws_apigatewayv2_api.lambda_api.id
+  route_key = "ANY /process"  # HTTP POST to /upload
   target    = "integrations/${aws_apigatewayv2_integration.lambda_integration.id}"
 }
 
