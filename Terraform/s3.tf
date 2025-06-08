@@ -17,7 +17,7 @@ resource "aws_s3_bucket" "upload_bucket" {
 
   lifecycle {
     prevent_destroy = false           # Allows terraform destroy to delete bucket
-    ignore_changes  = [tags, versioning, website]  # Ignores tag, versioning, and website changes
+    ignore_changes  = [tags, versioning, website, acceleration_status]  # Ignores various configuration changes
   }
 }
 
@@ -129,6 +129,14 @@ resource "aws_lambda_function" "file_processor" {
   role          = aws_iam_role.lambda_exec_role.arn
   filename      = data.archive_file.lambda_zip.output_path
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256  # Triggers update on code change
+  publish       = false  # Don't publish versions
+  
+  lifecycle {
+    ignore_changes = [
+      # Ignore changes to versions
+      version, last_modified, qualified_arn
+    ]
+  }
 }
 
 
