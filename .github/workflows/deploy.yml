@@ -42,7 +42,8 @@ jobs:
     - name: Upload test file
       run: |
         echo "Hello from GitHub Actions" > testfile.txt
-        aws s3 cp testfile.txt s3://${{ env.BUCKET_NAME }}/testfile.txt
+        aws s3 cp testfile.txt s3://file-upload-dev-bucket-930b967c/testfile.txt
+
         
     - name: Test Lambda via API Gateway
       run: |

@@ -1,9 +1,3 @@
-# Output the S3 bucket name for use in GitHub Actions
-output "s3_bucket_name" {
-  description = "The name of the S3 bucket created for file uploads"
-  value       = aws_s3_bucket.upload_bucket.bucket
-}
-
 # Output the API Gateway endpoint URL
 output "api_endpoint" {
   description = "The HTTP API Gateway endpoint URL"
