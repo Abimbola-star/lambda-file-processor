@@ -24,23 +24,25 @@ jobs:
         working-directory: Terraform
         run: terraform apply -auto-approve
       - name: Get Terraform outputs
-        id: terraform-outputs
+        id: terraform_outputs
         working-directory: Terraform
         run: |
-          echo "BUCKET_NAME=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
-          echo "API_ENDPOINT=$(terraform output -raw api_endpoint)" >> $GITHUB_OUTPUT
+          echo "BUCKET_NAME=$(terraform output -raw s3_bucket_name)" >> "$GITHUB_OUTPUT"
+          echo "API_ENDPOINT=$(terraform output -raw api_endpoint)" >> "$GITHUB_OUTPUT"
       - name: Debug outputs
         run: |
-          echo "S3 Bucket: ${{ steps.terraform-outputs.outputs.BUCKET_NAME }}"
-          echo "API Endpoint: ${{ steps.terraform-outputs.outputs.API_ENDPOINT }}"
-      - name: Upload test file
+          echo "S3 Bucket: ${{ steps.terraform_outputs.outputs.BUCKET_NAME }}"
+          echo "API Endpoint: ${{ steps.terraform_outputs.outputs.API_ENDPOINT }}"
+      - name: Upload test file to S3
         run: |
           echo "Hello from GitHub Actions" > testfile.txt
-          aws s3 cp testfile.txt s3://${{ steps.terraform-outputs.outputs.BUCKET_NAME }}/testfile.txt
+          aws s3 cp testfile.txt s3://${{ steps.terraform_outputs.outputs.BUCKET_NAME }}/testfile.txt
       - name: Test Lambda via API Gateway
         run: |
-          curl -X POST ${{ steps.terraform-outputs.outputs.API_ENDPOINT }}/process -d '{"test":"data"}'
+          curl -X POST ${{ steps.terraform_outputs.outputs.API_ENDPOINT }}/process \
+            -H "Content-Type: application/json" \
+            -d '{"test":"data"}'
       - name: Print resource information
         run: |
-          echo "S3 Bucket: ${{ steps.terraform-outputs.outputs.BUCKET_NAME }}"
-          echo "API Endpoint: ${{ steps.terraform-outputs.outputs.API_ENDPOINT }}"
+          echo "S3 Bucket: ${{ steps.terraform_outputs.outputs.BUCKET_NAME }}"
+          echo "API Endpoint: ${{ steps.terraform_outputs.outputs.API_ENDPOINT }}"
