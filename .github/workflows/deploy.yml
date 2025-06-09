@@ -8,6 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: dev # Specify your environment name here
     env:  
       BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
       API_ENDPOINT: ${{ secrets.API_ENDPOINT }}
@@ -23,10 +24,15 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      - name: Debug environment variables
+        run: |
+          echo "BUCKET_NAME value: '${{ env.BUCKET_NAME }}'"
+          
       - name: Upload test file to S3
+        if: env.BUCKET_NAME != ''
         run: |
           echo "Hello from GitHub Actions" > testfile.txt
-          aws s3 cp testfile.txt s3://"${{ env.BUCKET_NAME }}"/testfile.txt
+          aws s3 cp testfile.txt s3://${{ env.BUCKET_NAME }}/testfile.txt
 
       - name: Test Lambda via API Gateway
         run: |
