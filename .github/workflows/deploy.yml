@@ -23,26 +23,27 @@ jobs:
       - name: Terraform Apply
         working-directory: Terraform
         run: terraform apply -auto-approve
-      - name: Get Terraform outputs
-        id: terraform_outputs
+      - name: Get Terraform outputs and export as env vars
         working-directory: Terraform
         run: |
-          echo "BUCKET_NAME=$(terraform output -raw s3_bucket_name)" >> "$GITHUB_OUTPUT"
-          echo "API_ENDPOINT=$(terraform output -raw api_endpoint)" >> "$GITHUB_OUTPUT"
+          BUCKET_NAME=$(terraform output -raw s3_bucket_name | tr -d '\n\r')
+          API_ENDPOINT=$(terraform output -raw api_endpoint | tr -d '\n\r')
+          echo "BUCKET_NAME=$BUCKET_NAME" >> $GITHUB_ENV
+          echo "API_ENDPOINT=$API_ENDPOINT" >> $GITHUB_ENV
       - name: Debug outputs
         run: |
-          echo "S3 Bucket: ${{ steps.terraform_outputs.outputs.BUCKET_NAME }}"
-          echo "API Endpoint: ${{ steps.terraform_outputs.outputs.API_ENDPOINT }}"
+          echo "S3 Bucket: $BUCKET_NAME"
+          echo "API Endpoint: $API_ENDPOINT"
       - name: Upload test file to S3
         run: |
           echo "Hello from GitHub Actions" > testfile.txt
-          aws s3 cp testfile.txt s3://${{ steps.terraform_outputs.outputs.BUCKET_NAME }}/testfile.txt
+          aws s3 cp testfile.txt s3://$BUCKET_NAME/testfile.txt
       - name: Test Lambda via API Gateway
         run: |
-          curl -X POST ${{ steps.terraform_outputs.outputs.API_ENDPOINT }}/process \
+          curl -X POST $API_ENDPOINT/process \
             -H "Content-Type: application/json" \
             -d '{"test":"data"}'
       - name: Print resource information
         run: |
-          echo "S3 Bucket: ${{ steps.terraform_outputs.outputs.BUCKET_NAME }}"
-          echo "API Endpoint: ${{ steps.terraform_outputs.outputs.API_ENDPOINT }}"
+          echo "S3 Bucket: $BUCKET_NAME"
+          echo "API Endpoint: $API_ENDPOINT"
