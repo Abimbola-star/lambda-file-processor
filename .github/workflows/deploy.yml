@@ -1,17 +1,21 @@
 name: Deploy Lambda File Processor
+
 on:
   push:
     branches: [ dev ]
   workflow_dispatch:
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env: 
+    env:  
       BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
       API_ENDPOINT: ${{ secrets.API_ENDPOINT }}
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -29,7 +33,7 @@ jobs:
           curl -X POST "${{ API_ENDPOINT }}/process" \
             -H "Content-Type: application/json" \
             -d '{"test":"data"}'
-            
+
       - name: Print resource information
         run: |
           echo "S3 Bucket: ${{ BUCKET_NAME }}"
