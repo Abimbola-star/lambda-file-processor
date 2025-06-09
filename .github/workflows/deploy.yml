@@ -1,48 +1,46 @@
 name: Deploy Lambda File Processor
-
 on:
   push:
     branches: [ dev ]
   workflow_dispatch:
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
-    
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
-      
-    - name: Terraform Init
-      run: |
-        cd Terraform
-        terraform init
-      
-    - name: Terraform Apply
-      run: |
-        cd Terraform
-        terraform apply -auto-approve
-      
-       
-    - name: Upload test file
-      run: |
-        echo "Hello from GitHub Actions" > testfile.txt
-        aws s3 cp testfile.txt s3://${{ steps.terraform-outputs.outputs.BUCKET_NAME }}/testfile.txt
-        
-    - name: Test Lambda via API Gateway
-      run: |
-        curl -X POST ${{ steps.terraform-outputs.outputs.API_ENDPOINT }}/process -d '{"test":"data"}'
-        
-    - name: Print resource information
-      run: |
-        echo "S3 Bucket: ${{ steps.terraform-outputs.outputs.BUCKET_NAME }}"
-        echo "API Endpoint: ${{ steps.terraform-outputs.outputs.API_ENDPOINT }}"
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+      - name: Terraform Init
+        working-directory: Terraform
+        run: terraform init
+      - name: Terraform Apply
+        working-directory: Terraform
+        run: terraform apply -auto-approve
+      - name: Get Terraform outputs
+        id: terraform-outputs
+        working-directory: Terraform
+        run: |
+          echo "BUCKET_NAME=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
+          echo "API_ENDPOINT=$(terraform output -raw api_endpoint)" >> $GITHUB_OUTPUT
+      - name: Debug outputs
+        run: |
+          echo "S3 Bucket: ${{ steps.terraform-outputs.outputs.BUCKET_NAME }}"
+          echo "API Endpoint: ${{ steps.terraform-outputs.outputs.API_ENDPOINT }}"
+      - name: Upload test file
+        run: |
+          echo "Hello from GitHub Actions" > testfile.txt
+          aws s3 cp testfile.txt s3://${{ steps.terraform-outputs.outputs.BUCKET_NAME }}/testfile.txt
+      - name: Test Lambda via API Gateway
+        run: |
+          curl -X POST ${{ steps.terraform-outputs.outputs.API_ENDPOINT }}/process -d '{"test":"data"}'
+      - name: Print resource information
+        run: |
+          echo "S3 Bucket: ${{ steps.terraform-outputs.outputs.BUCKET_NAME }}"
+          echo "API Endpoint: ${{ steps.terraform-outputs.outputs.API_ENDPOINT }}"
